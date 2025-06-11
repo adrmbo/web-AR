@@ -3,17 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>MBO AR Modelle</title>
+
+  <title>Makeup Unit AR/VR</title>
+
   <style>
     body { font-family: Arial, sans-serif; display: flex; height: 100vh; margin: 0; align-items: center; justify-content: center; background: #f0f0f0; }
     .menu { text-align: center; }
     .menu h1 { margin-bottom: 1em; }
+
     .menu select, .menu button { padding: 0.5em 1em; margin: 0.5em; font-size: 1em; }
     .hidden { display: none; }
+
+    .menu a { display: block; margin: 0.5em 0; padding: 0.75em 1em; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }
+    .menu a:hover { background: #0056b3; }
+
   </style>
 </head>
 <body>
   <div class="menu">
+
     <h1>MBO AR Modelle</h1>
     <select id="model-select">
       <option value="Makeup Unit.glb">Makeup Unit</option>
@@ -39,5 +49,11 @@
       location.href = `location-placement.html?model=${model}`;
     });
   </script>
+
+    <h1>Makeup Unit</h1>
+    <a href="free-placement.html">Freie Platzierung</a>
+    <a href="location-placement.html">Ortsgebundene Platzierung (VPS)</a>
+  </div>
+
 </body>
 </html>
