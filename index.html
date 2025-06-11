@@ -27,6 +27,7 @@
     const select = document.getElementById('model-select');
     const placement = document.getElementById('placement');
     select.addEventListener('change', () => placement.classList.remove('hidden'));
+    if (select.value) placement.classList.remove('hidden');
 
     document.getElementById('free-btn').addEventListener('click', () => {
       const model = encodeURIComponent(select.value);

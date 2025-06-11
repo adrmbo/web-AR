@@ -22,7 +22,7 @@
     let anchor = null;
 
     const params = new URLSearchParams(window.location.search);
-    const modelUrl = params.get('model') || 'Makeup%20Unit.glb';
+    const modelUrl = decodeURIComponent(params.get('model') || 'Makeup Unit.glb');
 
     init();
     animate();
