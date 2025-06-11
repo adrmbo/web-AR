@@ -4,14 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebAR & VR Demo</title>
-  <!-- Import Map, damit bare module "three" aufgelöst wird -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.module.js"
-    }
-  }
-  </script>
   <style>
     body { margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -19,7 +11,7 @@
 </head>
 <body>
   <script type="module">
-    import * as THREE from 'three';
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.module.js';
     import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/webxr/ARButton.js';
     import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/webxr/VRButton.js';
     import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/loaders/GLTFLoader.js';
@@ -45,16 +37,19 @@
       document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
       document.body.appendChild(VRButton.createButton(renderer));
 
+      // Reticle für AR Hit-Test
       const geometry = new THREE.RingGeometry(0.1, 0.15, 32).rotateX(- Math.PI / 2);
       const material = new THREE.MeshBasicMaterial({ color: 0x00ffff });
       reticle = new THREE.Mesh(geometry, material);
       reticle.visible = false;
       scene.add(reticle);
 
+      // Controller für Platzierung
       const controller = renderer.xr.getController(0);
       controller.addEventListener('select', onSelect);
       scene.add(controller);
 
+      // Sessionstart: Hit-Test-Quelle einrichten
       renderer.xr.addEventListener('sessionstart', async () => {
         console.log('sessionstart');
         const session = renderer.xr.getSession();
