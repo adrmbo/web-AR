@@ -3,127 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Makeup Unit - Freie Platzierung</title>
+  <title>Freie Platzierung</title>
   <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
+    body { margin: 0; display: flex; height: 100vh; }
+    model-viewer { width: 100%; height: 100%; }
   </style>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
-  <script src="https://unpkg.com/webxr-polyfill@latest/build/webxr-polyfill.min.js"></script>
-  <script type="module">
-    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.module.js';
-    import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/webxr/ARButton.js';
-    import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/webxr/VRButton.js';
-    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/loaders/GLTFLoader.js';
-
-    let camera, scene, renderer;
-    let reticle, hitSource, localRef;
-    let anchor = null;
-
-    const params = new URLSearchParams(window.location.search);
-    const modelUrl = decodeURIComponent(params.get('model') || 'Makeup Unit.glb');
-    init();
-    animate();
-
-    function init() {
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera();
-
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.xr.enabled = true;
-      document.body.appendChild(renderer.domElement);
-
-      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test', 'anchors'] }));
-      document.body.appendChild(VRButton.createButton(renderer));
-
-      const geometry = new THREE.RingGeometry(0.1, 0.15, 32).rotateX(-Math.PI / 2);
-      const material = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-      reticle = new THREE.Mesh(geometry, material);
-      reticle.visible = false;
-      scene.add(reticle);
-
-      const controller = renderer.xr.getController(0);
-      controller.addEventListener('select', onSelect);
-      scene.add(controller);
-
-      renderer.xr.addEventListener('sessionstart', async () => {
-        const session = renderer.xr.getSession();
-        if (session.environmentBlendMode !== 'opaque') {
-          const viewerRef = await session.requestReferenceSpace('viewer');
-          hitSource = await session.requestHitTestSource({ space: viewerRef });
-          localRef = await session.requestReferenceSpace('local');
-        }
-      });
-
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    }
-
-    async function onSelect() {
-      if (!reticle.visible || !hitSource) return;
-      const frame = renderer.xr.getFrame();
-      const hits = frame.getHitTestResults(hitSource);
-      if (!hits.length) return;
-      const hit = hits[0];
-      const pose = hit.getPose(localRef);
-      if (anchor) anchor.delete();
-      if (hit.createAnchor) {
-        anchor = await hit.createAnchor();
-        placeModel(anchor.anchorSpace, pose.transform.orientation);
-      } else {
-        placeModel(pose.transform.position, pose.transform.orientation);
-      }
-      reticle.visible = false;
-    }
-
-    function placeModel(position, orientation) {
-      const loader = new GLTFLoader();
-      loader.load(encodeURI(modelUrl), gltf => {
-        const model = gltf.scene;
-        if (position instanceof XRSpace) {
-          const anchorSpace = position;
-          const anchorGroup = new THREE.Group();
-          anchorGroup.add(model);
-          model.matrixAutoUpdate = false;
-          anchorGroup.matrixAutoUpdate = false;
-          scene.add(anchorGroup);
-          renderer.xr.getSession().addEventListener('frame', (ev) => {
-            const pose = ev.frame.getPose(anchorSpace, localRef);
-            if (pose) {
-              anchorGroup.matrix.fromArray(pose.transform.matrix);
-              anchorGroup.matrix.decompose(anchorGroup.position, anchorGroup.quaternion, anchorGroup.scale);
-            }
-          });
-        } else {
-          model.position.copy(position);
-          model.quaternion.copy(orientation);
-          scene.add(model);
-        }
-        model.scale.set(0.5, 0.5, 0.5);
-      }, undefined, err => {
-        console.error('Fehler beim Laden des Modells:', err);
-      });
-    }
-
-    function animate() {
-      renderer.setAnimationLoop((time, frame) => {
-        if (frame && hitSource) {
-          const hits = frame.getHitTestResults(hitSource);
-          if (hits.length) {
-            const pose = hits[0].getPose(localRef);
-            reticle.visible = true;
-            reticle.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-            reticle.quaternion.set(pose.transform.orientation.x, pose.transform.orientation.y, pose.transform.orientation.z, pose.transform.orientation.w);
-          }
-        }
-        renderer.render(scene, camera);
-      });
-    }
+  <model-viewer id="viewer" camera-controls ar ar-modes="webxr scene-viewer quick-look"></model-viewer>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const model = decodeURIComponent(params.get('model') || 'Makeup Unit.glb');
+    document.getElementById('viewer').setAttribute('src', model);
   </script>
 </body>
 </html>
