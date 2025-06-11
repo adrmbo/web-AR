@@ -52,7 +52,9 @@
 
       renderer.xr.addEventListener('sessionstart', async () => {
         const session = renderer.xr.getSession();
-        if (session.environmentBlendMode !== 'opaque') {
+      loader.load(encodeURI(modelUrl), gltf => {
+      }, undefined, err => {
+        console.error('Fehler beim Laden des Modells:', err);
           const viewerRef = await session.requestReferenceSpace('viewer');
           hitSource = await session.requestHitTestSource({ space: viewerRef });
           localRef = await session.requestReferenceSpace('local');
