@@ -13,9 +13,11 @@
 <body>
   <model-viewer id="viewer" camera-controls ar ar-modes="webxr scene-viewer quick-look"></model-viewer>
   <script>
+    const viewer = document.getElementById('viewer');
     const params = new URLSearchParams(location.search);
     const model = decodeURIComponent(params.get('model') || 'Makeup Unit.glb');
-    document.getElementById('viewer').setAttribute('src', model);
+    viewer.setAttribute('src', encodeURI(model));
+    viewer.addEventListener('error', (e) => console.error('Fehler beim Laden des Modells:', e));
   </script>
 </body>
 </html>
