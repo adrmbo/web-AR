@@ -10,6 +10,8 @@
   </style>
 </head>
 <body>
+  <!-- WebXR Polyfill für breitere Browser-Unterstützung -->
+  <script src="https://unpkg.com/webxr-polyfill@latest/build/webxr-polyfill.min.js"></script>
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.module.js';
     import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/webxr/ARButton.js';
@@ -33,30 +35,30 @@
       renderer.xr.enabled = true;
       document.body.appendChild(renderer.domElement);
 
-      // AR- und VR-Buttons
+      // Native AR- und VR-Buttons hinzufügen
       document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
       document.body.appendChild(VRButton.createButton(renderer));
 
-      // Reticle für AR Hit-Test
+      // Reticle für AR-Hit-Tests
       const geometry = new THREE.RingGeometry(0.1, 0.15, 32).rotateX(- Math.PI / 2);
       const material = new THREE.MeshBasicMaterial({ color: 0x00ffff });
       reticle = new THREE.Mesh(geometry, material);
       reticle.visible = false;
       scene.add(reticle);
 
-      // Controller für Platzierung
+      // Controller für Tap-Events
       const controller = renderer.xr.getController(0);
       controller.addEventListener('select', onSelect);
       scene.add(controller);
 
-      // Sessionstart: Hit-Test-Quelle einrichten
+      // Session-Start konfigurieren
       renderer.xr.addEventListener('sessionstart', async () => {
         console.log('sessionstart');
         const session = renderer.xr.getSession();
         if (session.environmentBlendMode === 'opaque') {
-          console.log('VR session');
+          console.log('VR session gestartet');
         } else {
-          console.log('AR session');
+          console.log('AR session gestartet');
           const viewerRef = await session.requestReferenceSpace('viewer');
           hitSource = await session.requestHitTestSource({ space: viewerRef });
           localRef  = await session.requestReferenceSpace('local');
@@ -72,7 +74,7 @@
 
     function onSelect() {
       if (!reticle.visible) return;
-      console.log('placing model');
+      console.log('Platziere Modell');
       placeModel(reticle.position.clone(), reticle.quaternion.clone());
       reticle.visible = false;
     }
@@ -85,21 +87,24 @@
         model.quaternion.copy(quaternion);
         model.scale.set(0.5, 0.5, 0.5);
         scene.add(model);
-        console.log('model added');
+        console.log('Modell hinzugefügt');
       }, undefined, error => {
-        console.error('Fehler beim Laden des Modells:', error);
+        console.error('Fehler beim Modell-Laden:', error);
       });
     }
 
     function animate() {
-      console.log('animate frame');
       renderer.setAnimationLoop((time, frame) => {
         if (frame && hitSource) {
           const hits = frame.getHitTestResults(hitSource);
           if (hits.length) {
             const pose = hits[0].getPose(localRef);
             reticle.visible = true;
-            reticle.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+            reticle.position.set(
+              pose.transform.position.x,
+              pose.transform.position.y,
+              pose.transform.position.z
+            );
             reticle.quaternion.set(
               pose.transform.orientation.x,
               pose.transform.orientation.y,
@@ -111,6 +116,10 @@
         renderer.render(scene, camera);
       });
     }
+  </script>
+</body>
+</html>
+
   </script>
 </body>
 </html>
