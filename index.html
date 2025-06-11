@@ -13,6 +13,7 @@
   <!-- WebXR Polyfill für breitere Browser-Unterstützung -->
   <script src="https://unpkg.com/webxr-polyfill@latest/build/webxr-polyfill.min.js"></script>
   <script type="module">
+    // Drei.js und WebXR-Komponenten direkt von CDN importieren
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.module.js';
     import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/webxr/ARButton.js';
     import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/webxr/VRButton.js';
@@ -36,8 +37,12 @@
       document.body.appendChild(renderer.domElement);
 
       // Native AR- und VR-Buttons hinzufügen
-      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
-      document.body.appendChild(VRButton.createButton(renderer));
+      document.body.appendChild(
+        ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] })
+      );
+      document.body.appendChild(
+        VRButton.createButton(renderer)
+      );
 
       // Reticle für AR-Hit-Tests
       const geometry = new THREE.RingGeometry(0.1, 0.15, 32).rotateX(- Math.PI / 2);
@@ -116,10 +121,6 @@
         renderer.render(scene, camera);
       });
     }
-  </script>
-</body>
-</html>
-
   </script>
 </body>
 </html>
