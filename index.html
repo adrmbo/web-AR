@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebAR VPS Demo</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    #enter-ar, #enter-vr { position: absolute; top: 1em; left: 1em; z-index: 2; padding: 0.5em 1em; }
+    #enter-vr { left: 8em; }
+  </style>
+</head>
+<body>
+  <button id="enter-ar">AR starten</button>
+  <button id="enter-vr">VR starten</button>
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.module.js';
+    import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/webxr/ARButton.js';
+    import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/webxr/VRButton.js';
+    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/loaders/GLTFLoader.js';
+
+    let camera, scene, renderer;
+    let reticle, hitSource, localRef;
+
+    init();
+    animate();
+
+    function init() {
+      // Szene und Kamera
+      scene  = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera();
+
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.xr.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      // AR und VR Buttons
+      document.getElementById('enter-ar').addEventListener('click', () => {
+        document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+      }, { once: true });
+      document.body.appendChild(VRButton.createButton(renderer));
+
+      // Reticle für Hit-Test
+      const geometry = new THREE.RingGeometry(0.1, 0.15, 32).rotateX(- Math.PI / 2);
+      const material = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+      reticle = new THREE.Mesh(geometry, material);
+      reticle.visible = false;
+      scene.add(reticle);
+
+      // Controller
+      const controller = renderer.xr.getController(0);
+      controller.addEventListener('select', onSelect);
+      scene.add(controller);
+
+      // Sessionstart: Hit-Test-Quelle einrichten
+      renderer.xr.addEventListener('sessionstart', async () => {
+        const session = renderer.xr.getSession();
+        if (session.environmentBlendMode === 'opaque') {
+          // VR-Session
+        } else {
+          // AR-Session
+          const viewerRef = await session.requestReferenceSpace('viewer');
+          hitSource = await session.requestHitTestSource({ space: viewerRef });
+          localRef  = await session.requestReferenceSpace('local');
+        }
+      });
+    }
+
+    function onSelect(event) {
+      if (!reticle.visible) return;
+      // Modell platzieren
+      placeModel(reticle.position.clone(), reticle.quaternion.clone());
+      reticle.visible = false;
+    }
+
+    function placeModel(position, quaternion) {
+      const loader = new GLTFLoader();
+      loader.load('model.glb', gltf => {
+        const model = gltf.scene;
+        model.position.copy(position);
+        model.quaternion.copy(quaternion);
+        model.scale.set(0.5, 0.5, 0.5);
+        scene.add(model);
+      });
+    }
+
+    function animate() {
+      renderer.setAnimationLoop((time, frame) => {
+        if (frame && hitSource) {
+          const hits = frame.getHitTestResults(hitSource);
+          if (hits.length) {
+            const pose = hits[0].getPose(localRef);
+            reticle.visible = true;
+            reticle.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+            reticle.quaternion.set(
+              pose.transform.orientation.x,
+              pose.transform.orientation.y,
+              pose.transform.orientation.z,
+              pose.transform.orientation.w
+            );
+          }
+        }
+        renderer.render(scene, camera);
+      });
+    }
+  </script>
+</body>
+</html>
