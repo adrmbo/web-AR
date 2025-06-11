@@ -3,124 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebAR & VR Demo</title>
+  <title>MBO AR Modelle</title>
   <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
+    body { font-family: Arial, sans-serif; display: flex; height: 100vh; margin: 0; align-items: center; justify-content: center; background: #f0f0f0; }
+    .menu { text-align: center; }
+    .menu h1 { margin-bottom: 1em; }
+    .menu select, .menu button { padding: 0.5em 1em; margin: 0.5em; font-size: 1em; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <!-- WebXR Polyfill für breitere Browser-Unterstützung -->
-  <script src="https://unpkg.com/webxr-polyfill@latest/build/webxr-polyfill.min.js"></script>
-  <script type="module">
-    // Drei.js und WebXR-Komponenten direkt von CDN importieren
-    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.module.js';
-    import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/webxr/ARButton.js';
-    import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/webxr/VRButton.js';
-    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.148.0/examples/jsm/loaders/GLTFLoader.js';
+  <div class="menu">
+    <h1>MBO AR Modelle</h1>
+    <select id="model-select">
+      <option value="Makeup Unit.glb">Makeup Unit</option>
+    </select>
+    <div id="placement" class="hidden">
+      <button id="free-btn">Freie Platzierung</button>
+      <button id="loc-btn">Ortsgebunden (VPS)</button>
+    </div>
+  </div>
+  <script>
+    const select = document.getElementById('model-select');
+    const placement = document.getElementById('placement');
+    select.addEventListener('change', () => placement.classList.remove('hidden'));
 
-    console.log('Module script loaded');
-    let camera, scene, renderer;
-    let reticle, hitSource, localRef;
+    document.getElementById('free-btn').addEventListener('click', () => {
+      const model = encodeURIComponent(select.value);
+      location.href = `free-placement.html?model=${model}`;
+    });
 
-    init();
-    animate();
-
-    function init() {
-      console.log('init()');
-      scene  = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera();
-
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.xr.enabled = true;
-      document.body.appendChild(renderer.domElement);
-
-      // Native AR- und VR-Buttons hinzufügen
-      document.body.appendChild(
-        ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] })
-      );
-      document.body.appendChild(
-        VRButton.createButton(renderer)
-      );
-
-      // Reticle für AR-Hit-Tests
-      const geometry = new THREE.RingGeometry(0.1, 0.15, 32).rotateX(- Math.PI / 2);
-      const material = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-      reticle = new THREE.Mesh(geometry, material);
-      reticle.visible = false;
-      scene.add(reticle);
-
-      // Controller für Tap-Events
-      const controller = renderer.xr.getController(0);
-      controller.addEventListener('select', onSelect);
-      scene.add(controller);
-
-      // Session-Start konfigurieren
-      renderer.xr.addEventListener('sessionstart', async () => {
-        console.log('sessionstart');
-        const session = renderer.xr.getSession();
-        if (session.environmentBlendMode === 'opaque') {
-          console.log('VR session gestartet');
-        } else {
-          console.log('AR session gestartet');
-          const viewerRef = await session.requestReferenceSpace('viewer');
-          hitSource = await session.requestHitTestSource({ space: viewerRef });
-          localRef  = await session.requestReferenceSpace('local');
-        }
-      });
-
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    }
-
-    function onSelect() {
-      if (!reticle.visible) return;
-      console.log('Platziere Modell');
-      placeModel(reticle.position.clone(), reticle.quaternion.clone());
-      reticle.visible = false;
-    }
-
-    function placeModel(position, quaternion) {
-      const loader = new GLTFLoader();
-      loader.load('Makeup%20Unit.glb', gltf => {
-        const model = gltf.scene;
-        model.position.copy(position);
-        model.quaternion.copy(quaternion);
-        model.scale.set(0.5, 0.5, 0.5);
-        scene.add(model);
-        console.log('Modell hinzugefügt');
-      }, undefined, error => {
-        console.error('Fehler beim Modell-Laden:', error);
-      });
-    }
-
-    function animate() {
-      renderer.setAnimationLoop((time, frame) => {
-        if (frame && hitSource) {
-          const hits = frame.getHitTestResults(hitSource);
-          if (hits.length) {
-            const pose = hits[0].getPose(localRef);
-            reticle.visible = true;
-            reticle.position.set(
-              pose.transform.position.x,
-              pose.transform.position.y,
-              pose.transform.position.z
-            );
-            reticle.quaternion.set(
-              pose.transform.orientation.x,
-              pose.transform.orientation.y,
-              pose.transform.orientation.z,
-              pose.transform.orientation.w
-            );
-          }
-        }
-        renderer.render(scene, camera);
-      });
-    }
+    document.getElementById('loc-btn').addEventListener('click', () => {
+      const model = encodeURIComponent(select.value);
+      location.href = `location-placement.html?model=${model}`;
+    });
   </script>
 </body>
 </html>
